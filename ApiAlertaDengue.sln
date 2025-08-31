@@ -1,6 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiAlertaDengue", "ApiAlertaDengue\ApiAlertaDengue.csproj", "{5173879C-27CA-4E06-98E2-3C7CBEC836AE}"
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiAlertaDengue", "ApiAlertaDengue.csproj", "{417DA7BF-A45B-A96C-BB42-82EDE0102136}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -8,9 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{5173879C-27CA-4E06-98E2-3C7CBEC836AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5173879C-27CA-4E06-98E2-3C7CBEC836AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5173879C-27CA-4E06-98E2-3C7CBEC836AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5173879C-27CA-4E06-98E2-3C7CBEC836AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{417DA7BF-A45B-A96C-BB42-82EDE0102136}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{417DA7BF-A45B-A96C-BB42-82EDE0102136}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{417DA7BF-A45B-A96C-BB42-82EDE0102136}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{417DA7BF-A45B-A96C-BB42-82EDE0102136}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4B6E5222-5E25-4D5E-A12A-160B9E25EF65}
 	EndGlobalSection
 EndGlobal
