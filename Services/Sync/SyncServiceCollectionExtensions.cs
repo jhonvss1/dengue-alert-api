@@ -8,6 +8,8 @@ public static class SyncServiceCollectionExtensions
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<CitySyncLocks>();
         services.AddScoped<ICitySyncService, CitySyncService>();
+        services.AddSingleton<ISyncRunner, SyncRunner>();
+        services.AddHostedService<WeeklySyncService>();
         return services;
     }
 }

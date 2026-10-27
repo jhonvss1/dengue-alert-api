@@ -8,6 +8,8 @@ namespace ApiAlertaDengue.Tests;
 public sealed class TestDb : IDisposable
 {
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
+
+    public SqliteConnection Connection => _connection;
     private readonly DbContextOptions<AppDbContext> _options;
 
     public TestDb()
