@@ -1,4 +1,41 @@
-@ApiAlertaDengue_HostAddress = https://localhost:7024
+@host = http://localhost:5270
+@adminKey = troque-pela-sua-chave
+
+### Buscar municípios por nome e/ou UF
+GET {{host}}/api/cities?search=belo&state=MG&page=1&pageSize=20
 Accept: application/json
 
-###
+### Detalhe de um município (3106200 = Belo Horizonte)
+GET {{host}}/api/cities/3106200
+
+### Série semanal das últimas 12 semanas (todas as doenças).
+### Na primeira consulta da cidade os dados são buscados na fonte externa.
+GET {{host}}/api/cities/3106200/alerts?weeks=12
+
+### Só uma doença (dengue | chikungunya | zika)
+GET {{host}}/api/cities/3106200/alerts?disease=chikungunya&weeks=26
+
+### Semana mais recente de cada doença
+GET {{host}}/api/cities/3106200/alerts/latest
+
+### Health check
+GET {{host}}/health
+
+### [admin] Sincronizar todas as cidades acompanhadas
+POST {{host}}/api/admin/sync
+X-Api-Key: {{adminKey}}
+
+### [admin] Pré-carregar cidades específicas (BH, São Paulo, Rio)
+POST {{host}}/api/admin/sync
+X-Api-Key: {{adminKey}}
+Content-Type: application/json
+
+{ "geocodes": [3106200, 3550308, 3304557] }
+
+### [admin] Últimas rodadas de sincronização
+GET {{host}}/api/admin/sync/runs
+X-Api-Key: {{adminKey}}
+
+### [admin] Recarregar o cadastro de municípios do IBGE
+POST {{host}}/api/admin/cities/refresh
+X-Api-Key: {{adminKey}}
