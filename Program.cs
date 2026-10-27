@@ -1,4 +1,5 @@
 using ApiAlertaDengue.Data;
+using ApiAlertaDengue.Security;
 using ApiAlertaDengue.Services.Alerts;
 using ApiAlertaDengue.Services.Cities;
 using ApiAlertaDengue.Services.InfoDengue;
@@ -19,6 +20,9 @@ builder.Services.AddInfoDengueClient(builder.Configuration);
 builder.Services.AddCityCatalog(builder.Configuration);
 builder.Services.AddCitySync(builder.Configuration);
 builder.Services.AddScoped<ICityAlertsService, CityAlertsService>();
+
+builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.Section));
+builder.Services.AddScoped<AdminApiKeyFilter>();
 
 // Origens permitidas (ex.: https://dengue.brago.com.br). Em desenvolvimento, sem configuração, libera qualquer origem.
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
