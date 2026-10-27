@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <Compile Remove="tests/**" />
+        <InternalsVisibleTo Include="ApiAlertaDengue.Tests" />
     </ItemGroup>
 
     <ItemGroup>

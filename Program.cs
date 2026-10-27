@@ -1,6 +1,7 @@
 using ApiAlertaDengue.Data;
 using ApiAlertaDengue.Services.Cities;
 using ApiAlertaDengue.Services.InfoDengue;
+using ApiAlertaDengue.Services.Sync;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddInfoDengueClient(builder.Configuration);
 builder.Services.AddCityCatalog(builder.Configuration);
+builder.Services.AddCitySync(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
