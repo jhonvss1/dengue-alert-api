@@ -5,6 +5,8 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <!-- Pede apenas o runtime 9.0.0 e aceita qualquer patch 9.x instalado. Sem isto, SDKs mais novos gravam o último patch que conhecem (ex.: 9.0.22) e a execução falha com "missing framework" -->
+        <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
     </PropertyGroup>
 
     <ItemGroup>
