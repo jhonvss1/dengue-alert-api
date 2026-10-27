@@ -32,9 +32,6 @@ builder.Services.AddHttpClient<DengueService>();
 
 builder.Services.AddControllers();
 
-// Adiciona o suporte ao OpenAPI (Swagger)
-builder.Services.AddOpenApi();
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -49,8 +46,6 @@ if (app.Environment.IsDevelopment())
         c.RoutePrefix = string.Empty;  // Isso configura o Swagger UI para aparecer na raiz do aplicativo (opcional)
     });
 
-
-    app.MapOpenApi();
 }
 
 // Aplica migração automática no banco de dados
