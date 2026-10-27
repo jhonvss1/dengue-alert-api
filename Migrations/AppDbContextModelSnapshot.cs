@@ -22,6 +22,39 @@ namespace ApiAlertaDengue.Migrations
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            modelBuilder.Entity("ApiAlertaDengue.Models.City", b =>
+                {
+                    b.Property<int>("Geocode")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsTracked")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("LastSyncedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("char(2)")
+                        .IsFixedLength();
+
+                    b.HasKey("Geocode");
+
+                    b.HasIndex("IsTracked");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("State", "Name");
+
+                    b.ToTable("Cities");
+                });
+
             modelBuilder.Entity("ApiAlertaDengue.Models.DengueAlert", b =>
                 {
                     b.Property<int>("Id")
@@ -36,24 +69,96 @@ namespace ApiAlertaDengue.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("EpidemologicalWeek")
-                        .HasColumnType("int");
+                    b.Property<string>("Disease")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<double>("EstimatedCases")
                         .HasColumnType("double");
 
-                    b.Property<int>("ReporteCases")
+                    b.Property<int>("Geocode")
                         .HasColumnType("int");
+
+                    b.Property<double?>("IncidencePer100k")
+                        .HasColumnType("double");
+
+                    b.Property<int>("ReportedCases")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Week")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly?>("WeekStart")
+                        .HasColumnType("date");
 
                     b.Property<int>("Year")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EpidemologicalWeek", "Year", "EstimatedCases")
+                    b.HasIndex("Geocode", "Disease", "Year", "Week")
                         .IsUnique();
 
                     b.ToTable("DengueAlerts");
+                });
+
+            modelBuilder.Entity("ApiAlertaDengue.Models.SyncRun", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CitiesFailed")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CitiesSucceeded")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CitiesTotal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<DateTime?>("FinishedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartedAt");
+
+                    b.ToTable("SyncRuns");
+                });
+
+            modelBuilder.Entity("ApiAlertaDengue.Models.DengueAlert", b =>
+                {
+                    b.HasOne("ApiAlertaDengue.Models.City", "City")
+                        .WithMany("Alerts")
+                        .HasForeignKey("Geocode")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("City");
+                });
+
+            modelBuilder.Entity("ApiAlertaDengue.Models.City", b =>
+                {
+                    b.Navigation("Alerts");
                 });
 #pragma warning restore 612, 618
         }
