@@ -12,6 +12,29 @@ services:
       - "127.0.0.1:${MYSQL_HOST_PORT:-3308}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  api:
+    build: .
+    container_name: dengue-alert-api
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "Server=mysql;Port=3306;Database=${MYSQL_DATABASE:-dengue_alert};User=${MYSQL_USER};Password=${MYSQL_PASSWORD};"
+      Database__ServerVersion: "8.4.0"
+      Cors__AllowedOrigins__0: ${CORS_ORIGIN:?defina CORS_ORIGIN no .env}
+      Admin__ApiKey: ${ADMIN_API_KEY:?defina ADMIN_API_KEY no .env}
+      TZ: America/Sao_Paulo
+    ports:
+      - "127.0.0.1:${API_HOST_PORT:-8080}:8080"
     restart: unless-stopped
 
   adminer:
