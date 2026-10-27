@@ -1,4 +1,5 @@
 using ApiAlertaDengue.Data;
+using ApiAlertaDengue.Services.Alerts;
 using ApiAlertaDengue.Services.Cities;
 using ApiAlertaDengue.Services.InfoDengue;
 using ApiAlertaDengue.Services.Sync;
@@ -17,6 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddInfoDengueClient(builder.Configuration);
 builder.Services.AddCityCatalog(builder.Configuration);
 builder.Services.AddCitySync(builder.Configuration);
+builder.Services.AddScoped<ICityAlertsService, CityAlertsService>();
 
 // Origens permitidas (ex.: https://dengue.brago.com.br). Em desenvolvimento, sem configuração, libera qualquer origem.
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
