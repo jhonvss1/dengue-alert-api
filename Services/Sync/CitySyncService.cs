@@ -70,7 +70,8 @@ public class CitySyncService(
     {
         if (fetched.Count == 0) return 0;
 
-        var fromKey = from.Key;
+        // Considera também semanas mais antigas que a janela pedida, caso a fonte as devolva.
+        var fromKey = Math.Min(from.Key, fetched.Min(a => a.Year * 100 + a.Week));
         var existing = (await db.DengueAlerts
                 .Where(a => a.Geocode == geocode && a.Year * 100 + a.Week >= fromKey)
                 .ToListAsync(cancellationToken))

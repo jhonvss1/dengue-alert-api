@@ -99,6 +99,26 @@ public class CitySyncServiceTests
     }
 
     [Fact]
+    public async Task ForcedSync_WhenSourceReturnsWeeksOlderThanWindow_UpdatesInsteadOfDuplicating()
+    {
+        using var testDb = new TestDb();
+        await SeedCityAsync(testDb, lastSyncedAt: Today.UtcDateTime.AddDays(-7));
+        await using (var seed = testDb.CreateContext())
+        {
+            seed.DengueAlerts.Add(Alert(Disease.Dengue, 1, 5)); // semana 2025/01, bem fora da janela de 9 semanas
+            await seed.SaveChangesAsync();
+        }
+        var client = new FakeClient { Respond = d => d == Disease.Dengue ? [Alert(d, 1, 50)] : [] };
+
+        await using (var db = testDb.CreateContext())
+            await CreateService(db, client, new FakeTimeProvider(Today)).SyncCityAsync(Bh, SyncMode.Force);
+
+        await using var verify = testDb.CreateContext();
+        var alert = await verify.DengueAlerts.SingleAsync();
+        Assert.Equal(50, alert.EstimatedCases);
+    }
+
+    [Fact]
     public async Task SecondSync_OnlyFetchesSinceLastSyncPlusRefreshWindow()
     {
         using var testDb = new TestDb();
