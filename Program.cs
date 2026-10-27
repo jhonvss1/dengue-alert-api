@@ -62,5 +62,3 @@ app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 
 app.Run();
-//script docker PS C:\Users\jhons> docker run -d --name dengue-alert -e MYSQL_ROOT_PASSWORD=246810
-//-e MYSQL_DATABASE=dengue_alert -e MYSQL_USER=admin -e MYSQL_PASSWORD=apialertadengue2025 -p 3306:3306 mysql:8.4
