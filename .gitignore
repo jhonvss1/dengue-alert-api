@@ -1,2 +1,13 @@
+# IDEs
 .vs/
 .idea/
+*.user
+*.DotSettings.user
+
+# Build
+bin/
+obj/
+
+# Segredos locais
+.env
+appsettings.*.local.json
