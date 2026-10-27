@@ -31,7 +31,7 @@ public class CitiesController(ICityAlertsService alerts) : ControllerBase
     public async Task<ActionResult<CityDto>> Get(int geocode, CancellationToken cancellationToken)
     {
         var city = await alerts.GetCityAsync(geocode, cancellationToken);
-        return city is null ? NotFound(Problem("Município não encontrado.")) : city;
+        return city is null ? NotFound(Problem("Município não encontrado.", StatusCodes.Status404NotFound)) : city;
     }
 
     /// <summary>
@@ -60,7 +60,7 @@ public class CitiesController(ICityAlertsService alerts) : ControllerBase
     private ActionResult<CityAlertsResponse> ToActionResult(AlertsOutcome outcome) => outcome.Status switch
     {
         AlertsStatus.Ok => outcome.Response!,
-        AlertsStatus.CityNotFound => NotFound(Problem("Município não encontrado.")),
+        AlertsStatus.CityNotFound => NotFound(Problem("Município não encontrado.", StatusCodes.Status404NotFound)),
         _ => StatusCode(StatusCodes.Status503ServiceUnavailable,
             Problem("Fonte de dados externa indisponível no momento. Tente novamente em instantes.",
                 StatusCodes.Status503ServiceUnavailable)),
