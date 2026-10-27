@@ -1,4 +1,5 @@
 using ApiAlertaDengue.Data;
+using ApiAlertaDengue.Services.InfoDengue;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +10,8 @@ var serverVersion = new MySqlServerVersion(
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, serverVersion, mysql => mysql.EnableRetryOnFailure()));
+
+builder.Services.AddInfoDengueClient(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
