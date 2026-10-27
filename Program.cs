@@ -1,4 +1,5 @@
 using ApiAlertaDengue.Data;
+using ApiAlertaDengue.Services.Cities;
 using ApiAlertaDengue.Services.InfoDengue;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, serverVersion, mysql => mysql.EnableRetryOnFailure()));
 
 builder.Services.AddInfoDengueClient(builder.Configuration);
+builder.Services.AddCityCatalog(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
