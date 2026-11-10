@@ -1,0 +1,24 @@
+[Unit]
+Description=Dengue Alert API
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=exec
+WorkingDirectory=/opt/dengue-alert-api
+# __DOTNET__ é substituído pelo deploy/install.sh com o caminho do dotnet desta máquina
+ExecStart=__DOTNET__ ApiAlertaDengue.dll
+EnvironmentFile=/etc/dengue-alert-api.env
+Environment=ASPNETCORE_ENVIRONMENT=Production
+# Só a própria VM acessa a API; o túnel da Cloudflare aponta para esta porta
+Environment=ASPNETCORE_URLS=http://127.0.0.1:8080
+Environment=TZ=America/Sao_Paulo
+User=dengue-alert
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
