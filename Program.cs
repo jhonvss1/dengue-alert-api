@@ -24,7 +24,7 @@ builder.Services.AddScoped<ICityAlertsService, CityAlertsService>();
 builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection(AdminOptions.Section));
 builder.Services.AddScoped<AdminApiKeyFilter>();
 
-// Origens permitidas (ex.: https://dengue.brago.com.br). Em desenvolvimento, sem configuração, libera qualquer origem.
+// Origens permitidas (ex.: https://dengue.braggo.com.br). Em desenvolvimento, sem configuração, libera qualquer origem.
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options => options.AddPolicy("Frontend", policy =>
 {

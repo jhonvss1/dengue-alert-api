@@ -59,7 +59,7 @@ Tudo pode ser definido por variáveis de ambiente (`Secao__Chave`) ou `appsettin
 |---|---|---|
 | `ConnectionStrings__DefaultConnection` | – | Connection string do MySQL (obrigatória) |
 | `Database__ServerVersion` | `8.4.0` | Versão do MySQL (evita conectar para detectar) |
-| `Cors__AllowedOrigins__0` | – | Origem do front (ex.: `https://dengue.brago.com.br`). Em Development, vazio libera tudo |
+| `Cors__AllowedOrigins__0` | – | Origem do front (ex.: `https://dengue.braggo.com.br`). Em Development, vazio libera tudo |
 | `Admin__ApiKey` | – | Chave dos endpoints admin |
 | `Sync__Enabled` | `true` | Liga/desliga o job semanal |
 | `Sync__DayOfWeek` / `Sync__TimeOfDay` / `Sync__TimeZone` | `Monday` / `03:00` / `America/Sao_Paulo` | Agenda do job |
@@ -97,17 +97,17 @@ Networks → Tunnels → Public hostname*):
 
 ```yaml
 ingress:
-  - hostname: api-dengue.brago.com.br
+  - hostname: api-dengue.braggo.com.br
     service: http://localhost:8080
   # ... suas outras regras ...
   - service: http_status:404
 ```
 
-O front fica em `https://dengue.brago.com.br` (Cloudflare Pages). Pré-carregar cidades após o primeiro deploy
+O front fica em `https://dengue.braggo.com.br` (Cloudflare Pages). Pré-carregar cidades após o primeiro deploy
 (opcional):
 
 ```bash
-curl -X POST https://api-dengue.brago.com.br/api/admin/sync \
+curl -X POST https://api-dengue.braggo.com.br/api/admin/sync \
   -H "X-Api-Key: $ADMIN_API_KEY" -H "Content-Type: application/json" \
   -d '{"geocodes":[3106200,3550308,3304557]}'
 ```
