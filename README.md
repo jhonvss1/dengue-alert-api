@@ -73,13 +73,20 @@ Tudo pode ser definido por variáveis de ambiente (`Secao__Chave`) ou `appsettin
 Requisitos: .NET 9 SDK e Docker (para o MySQL).
 
 ```bash
-cp .env.example .env            # preencha as senhas
+cp .env.example .env            # preencha MYSQL_ROOT_PASSWORD, MYSQL_USER e MYSQL_PASSWORD
 docker compose up -d mysql      # MySQL em 127.0.0.1:3308
 
-export ConnectionStrings__DefaultConnection="Server=127.0.0.1;Port=3308;Database=dengue_alert;User=dengue;Password=<sua-senha>;"
+# Configuração local fora do repositório (user-secrets): use os mesmos MYSQL_USER/MYSQL_PASSWORD do .env
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=127.0.0.1;Port=3308;Database=dengue_alert;User=<usuario>;Password=<senha>;"
+dotnet user-secrets set "Admin:ApiKey" "<uma-chave-local>"   # só se for testar /api/admin
+
 dotnet run                      # Swagger em http://localhost:5270
 dotnet test                     # testes (SQLite em memória, sem rede)
 ```
+
+Em Development, sem `Cors:AllowedOrigins`, a API libera qualquer origem, então o front em `localhost:4200` funciona sem configurar nada.
+**Não coloque senhas nem chaves em `appsettings*.json` nem no `ApiAlertaDengue.http`**: esses arquivos são versionados.
+No Rider também dá para usar *Run → Edit Configurations → Environment variables* (`ConnectionStrings__DefaultConnection=...`).
 
 As migrations são aplicadas automaticamente na subida. Para criar uma nova: `dotnet ef migrations add <Nome> -o Migrations`.
 Para consultar o banco no navegador: `docker compose --profile tools up -d adminer` (http://127.0.0.1:8081).
