@@ -102,7 +102,7 @@ exposto à internet: só o túnel da Cloudflare chega na API.
 **2. MySQL em Docker.**
 
 ```bash
-git clone -b dev https://github.com/jhonvss1/dengue-alert-api.git && cd dengue-alert-api
+git clone https://github.com/jhonvss1/dengue-alert-api.git && cd dengue-alert-api
 cp .env.example .env && chmod 600 .env    # preencha MYSQL_ROOT_PASSWORD, MYSQL_USER e MYSQL_PASSWORD
 docker compose up -d mysql                # 127.0.0.1:3308
 ```
@@ -151,12 +151,6 @@ O front fica em `https://dengue.braggo.com.br` (Cloudflare Pages). Pré-carregar
 curl -X POST https://api-dengue.braggo.com.br/api/admin/sync \
   -H "X-Api-Key: $ADMIN_API_KEY" -H "Content-Type: application/json" \
   -d '{"geocodes":[3106200,3550308,3304557]}'
-```
-
-### Alternativa: API também em Docker
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.api.yml up -d --build   # exige CORS_ORIGIN e ADMIN_API_KEY no .env
 ```
 
 ### Boas práticas
