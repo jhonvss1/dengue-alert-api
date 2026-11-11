@@ -17,7 +17,7 @@ Front-end: [dengue-alert-front-end](https://github.com/jhonvss1/dengue-alert-fro
 4. **Resiliência** – se a fonte estiver fora do ar e a cidade já tiver dados, a API devolve o último dado salvo com
    `isStale: true`. Se a cidade ainda não tiver dados, responde `503`.
 
-Consultas simultâneas à mesma cidade (ainda sem dados) disparam **uma única** busca na fonte.
+Consultas simultâneas à mesma cidade (ainda sem dados) disparam **uma única** busca na fonte, e só **25 cidades novas por hora** (configurável) podem ser buscadas, para proteger o InfoDengue e o servidor de quem consulta cidades em sequência.
 
 ## Endpoints
 
@@ -66,6 +66,7 @@ Tudo pode ser definido por variáveis de ambiente (`Secao__Chave`) ou `appsettin
 | `Sync__InitialHistoryWeeks` | `52` | Histórico carregado na primeira consulta |
 | `Sync__RefreshWindowWeeks` | `8` | Janela reavaliada em cada atualização |
 | `Sync__StaleAfterDays` | `14` | Dado mais velho que isso é atualizado na leitura |
+| `Sync__MaxNewCitiesPerHour` | `25` | Teto de cidades **ainda sem dados** buscadas na fonte por hora (janela deslizante; 0 = sem limite). Passando do teto, a API responde `429` com `Retry-After` para essas cidades; as que já têm dados continuam respondendo. Não vale para o job semanal nem para `/api/admin/sync` |
 | `Sync__MaxConcurrency` / `Sync__DelayBetweenCitiesMs` | `2` / `500` | Limites de carga sobre a fonte externa |
 
 ## Desenvolvimento local
@@ -157,4 +158,4 @@ curl -X POST https://api-dengue.braggo.com.br/api/admin/sync \
 
 - **Backup:** o volume `mysql_data` guarda os dados. Agende um `mysqldump` para fora da VM
   (`docker exec dengue-alert-mysql mysqldump -uroot -p... dengue_alert`).
-- **Rate limit:** crie uma regra de rate limit na Cloudflare para `api-dengue.braggo.com.br/api/*`.
+- **Rate limit:** crie uma regra de rate limit na Cloudflare para `api-dengue.braggo.com.br/api/*` (ex.: 30 requisições por 10 s por IP, ação Block). Ela cobre rajadas; o teto `Sync__MaxNewCitiesPerHour` cobre quem consulta cidades novas devagar e sem parar.
