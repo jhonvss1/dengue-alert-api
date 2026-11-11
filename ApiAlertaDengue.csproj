@@ -7,6 +7,10 @@
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <!-- Pede apenas o runtime 9.0.0 e aceita qualquer patch 9.x instalado. Sem isto, SDKs mais novos gravam o último patch que conhecem (ex.: 9.0.22) e a execução falha com "missing framework" -->
         <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
+        <!-- GC de estação de trabalho: bem menos memória reservada que o Server GC (padrão do template web), suficiente para esta API -->
+        <ServerGarbageCollection>false</ServerGarbageCollection>
+        <!-- Segredos só para desenvolvimento local (dotnet user-secrets): ficam fora do repositório -->
+        <UserSecretsId>47c266e4-f52b-4255-8d65-28dc606a3d8f</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>

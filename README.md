@@ -73,27 +73,63 @@ Tudo pode ser definido por variáveis de ambiente (`Secao__Chave`) ou `appsettin
 Requisitos: .NET 9 SDK e Docker (para o MySQL).
 
 ```bash
-cp .env.example .env            # preencha as senhas
+cp .env.example .env            # preencha MYSQL_ROOT_PASSWORD, MYSQL_USER e MYSQL_PASSWORD
 docker compose up -d mysql      # MySQL em 127.0.0.1:3308
 
-export ConnectionStrings__DefaultConnection="Server=127.0.0.1;Port=3308;Database=dengue_alert;User=dengue;Password=<sua-senha>;"
+# Configuração local fora do repositório (user-secrets): use os mesmos MYSQL_USER/MYSQL_PASSWORD do .env
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=127.0.0.1;Port=3308;Database=dengue_alert;User=<usuario>;Password=<senha>;"
+dotnet user-secrets set "Admin:ApiKey" "<uma-chave-local>"   # só se for testar /api/admin
+
 dotnet run                      # Swagger em http://localhost:5270
 dotnet test                     # testes (SQLite em memória, sem rede)
 ```
 
+Em Development, sem `Cors:AllowedOrigins`, a API libera qualquer origem, então o front em `localhost:4200` funciona sem configurar nada.
+**Não coloque senhas nem chaves em `appsettings*.json` nem no `ApiAlertaDengue.http`**: esses arquivos são versionados.
+No Rider também dá para usar *Run → Edit Configurations → Environment variables* (`ConnectionStrings__DefaultConnection=...`).
+
 As migrations são aplicadas automaticamente na subida. Para criar uma nova: `dotnet ef migrations add <Nome> -o Migrations`.
 Para consultar o banco no navegador: `docker compose --profile tools up -d adminer` (http://127.0.0.1:8081).
 
-## Deploy (servidor próprio + Cloudflare Tunnel)
+## Deploy no seu servidor (API direto na VM + MySQL em Docker + Cloudflare Tunnel)
+
+A API roda como serviço do `systemd`, ouvindo só em `127.0.0.1:8080`; o MySQL fica em Docker. Nenhum dos dois é
+exposto à internet: só o túnel da Cloudflare chega na API.
+
+**1. Portas.** Confira se `8080` e `3308` estão livres: `sudo ss -tulpn | grep -E ':8080|:3308'`.
+(Para usar outra porta: `MYSQL_HOST_PORT` no `.env` e `ASPNETCORE_URLS` em `deploy/dengue-alert-api.service`.)
+
+**2. MySQL em Docker.**
 
 ```bash
-cp .env.example .env   # preencha MYSQL_*, CORS_ORIGIN e ADMIN_API_KEY (openssl rand -hex 32)
-docker compose up -d --build
+git clone -b dev https://github.com/jhonvss1/dengue-alert-api.git && cd dengue-alert-api
+cp .env.example .env && chmod 600 .env    # preencha MYSQL_ROOT_PASSWORD, MYSQL_USER e MYSQL_PASSWORD
+docker compose up -d mysql                # 127.0.0.1:3308
 ```
 
-Sobem o MySQL (volume `mysql_data`) e a API, publicada **somente em `127.0.0.1:8080`**. O MySQL não é exposto à
-internet. Para publicar, adicione uma regra de ingress ao túnel que já existe (ou pelo painel *Zero Trust →
-Networks → Tunnels → Public hostname*):
+**3. .NET na VM** (SDK 9 ou superior; o `apt` nem sempre tem a versão 9):
+
+```bash
+curl -sSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
+sudo bash dotnet-install.sh --channel 9.0 --install-dir /usr/share/dotnet
+sudo ln -sf /usr/share/dotnet/dotnet /usr/local/bin/dotnet
+```
+
+**4. Instalar o serviço.**
+
+```bash
+sudo deploy/install.sh
+sudo nano /etc/dengue-alert-api.env       # senha do MySQL, Cors__AllowedOrigins__0 e Admin__ApiKey (openssl rand -hex 32)
+sudo systemctl start dengue-alert-api
+journalctl -u dengue-alert-api -f         # espere "Catálogo de municípios atualizado"
+curl http://127.0.0.1:8080/health         # Healthy
+```
+
+O `install.sh` cria o usuário `dengue-alert`, publica em `/opt/dengue-alert-api` e registra o serviço (inicia no boot e
+reinicia se cair). Ele só deixa você iniciar depois de preencher `/etc/dengue-alert-api.env`.
+
+**5. Túnel da Cloudflare.** Em *Zero Trust → Networks → Tunnels → seu túnel → Public hostname → Add*:
+`api-dengue.braggo.com.br` → `http://localhost:8080`. Ou, no `config.yml` do túnel:
 
 ```yaml
 ingress:
@@ -103,6 +139,11 @@ ingress:
   - service: http_status:404
 ```
 
+Se o `cloudflared` rodar em Docker, `localhost` não alcança a API: use o IP da VM na rede do Docker
+(ex.: `http://172.17.0.1:8080`) e ouça nessa interface em `ASPNETCORE_URLS`.
+
+**6. Atualizar** depois de um `git pull`: `sudo deploy/update.sh`.
+
 O front fica em `https://dengue.braggo.com.br` (Cloudflare Pages). Pré-carregar cidades após o primeiro deploy
 (opcional):
 
@@ -111,3 +152,15 @@ curl -X POST https://api-dengue.braggo.com.br/api/admin/sync \
   -H "X-Api-Key: $ADMIN_API_KEY" -H "Content-Type: application/json" \
   -d '{"geocodes":[3106200,3550308,3304557]}'
 ```
+
+### Alternativa: API também em Docker
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.api.yml up -d --build   # exige CORS_ORIGIN e ADMIN_API_KEY no .env
+```
+
+### Boas práticas
+
+- **Backup:** o volume `mysql_data` guarda os dados. Agende um `mysqldump` para fora da VM
+  (`docker exec dengue-alert-mysql mysqldump -uroot -p... dengue_alert`).
+- **Rate limit:** crie uma regra de rate limit na Cloudflare para `api-dengue.braggo.com.br/api/*`.
