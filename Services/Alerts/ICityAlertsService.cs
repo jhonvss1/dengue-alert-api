@@ -10,9 +10,12 @@ public enum AlertsStatus
 
     /// <summary>A cidade ainda não tem dados e a fonte externa está indisponível.</summary>
     SourceUnavailable,
+
+    /// <summary>A cidade ainda não tem dados e o teto de buscas novas por hora foi atingido.</summary>
+    RateLimited,
 }
 
-public record AlertsOutcome(AlertsStatus Status, CityAlertsResponse? Response = null);
+public record AlertsOutcome(AlertsStatus Status, CityAlertsResponse? Response = null, TimeSpan? RetryAfter = null);
 
 public interface ICityAlertsService
 {

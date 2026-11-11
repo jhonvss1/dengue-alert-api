@@ -61,10 +61,20 @@ public class CitiesController(ICityAlertsService alerts) : ControllerBase
     {
         AlertsStatus.Ok => outcome.Response!,
         AlertsStatus.CityNotFound => NotFound(Problem("Município não encontrado.", StatusCodes.Status404NotFound)),
+        AlertsStatus.RateLimited => RateLimited(outcome.RetryAfter),
         _ => StatusCode(StatusCodes.Status503ServiceUnavailable,
             Problem("Fonte de dados externa indisponível no momento. Tente novamente em instantes.",
                 StatusCodes.Status503ServiceUnavailable)),
     };
+
+    private ObjectResult RateLimited(TimeSpan? retryAfter)
+    {
+        var seconds = (int)Math.Ceiling((retryAfter ?? TimeSpan.FromMinutes(1)).TotalSeconds);
+        Response.Headers.RetryAfter = Math.Max(1, seconds).ToString();
+        return StatusCode(StatusCodes.Status429TooManyRequests,
+            Problem("Muitas cidades novas foram consultadas na última hora. Tente novamente em alguns minutos.",
+                StatusCodes.Status429TooManyRequests));
+    }
 
     private static ProblemDetails Problem(string detail, int status = StatusCodes.Status400BadRequest) =>
         new() { Status = status, Detail = detail };

@@ -58,7 +58,7 @@ public class CityAlertsService(
         int geocode, Disease? disease, int weeks, CancellationToken cancellationToken = default)
     {
         var ensured = await EnsureDataAsync(geocode, cancellationToken);
-        if (ensured.Status != AlertsStatus.Ok) return new AlertsOutcome(ensured.Status);
+        if (ensured.Status != AlertsStatus.Ok) return new AlertsOutcome(ensured.Status, RetryAfter: ensured.RetryAfter);
 
         var fromKey = EpidemiologicalWeek.Subtract(CurrentWeek(), weeks - 1).Key;
         var query = db.DengueAlerts.AsNoTracking()
@@ -75,7 +75,7 @@ public class CityAlertsService(
     public async Task<AlertsOutcome> GetLatestAsync(int geocode, CancellationToken cancellationToken = default)
     {
         var ensured = await EnsureDataAsync(geocode, cancellationToken);
-        if (ensured.Status != AlertsStatus.Ok) return new AlertsOutcome(ensured.Status);
+        if (ensured.Status != AlertsStatus.Ok) return new AlertsOutcome(ensured.Status, RetryAfter: ensured.RetryAfter);
 
         var fromKey = EpidemiologicalWeek.Subtract(CurrentWeek(), LatestLookbackWeeks - 1).Key;
         var recent = await db.DengueAlerts.AsNoTracking()
@@ -94,7 +94,7 @@ public class CityAlertsService(
     private static string EscapeLike(string term) =>
         term.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
 
-    private record Ensured(AlertsStatus Status, CityDto? City = null, bool IsStale = false);
+    private record Ensured(AlertsStatus Status, CityDto? City = null, bool IsStale = false, TimeSpan? RetryAfter = null);
 
     private async Task<Ensured> EnsureDataAsync(int geocode, CancellationToken cancellationToken)
     {
@@ -110,6 +110,11 @@ public class CityAlertsService(
             try
             {
                 await sync.SyncCityAsync(geocode, SyncMode.IfNeeded, cancellationToken);
+            }
+            catch (SyncRateLimitedException ex)
+            {
+                // Só a primeira busca de uma cidade passa pelo teto; quem já tem dados nunca chega aqui.
+                return new Ensured(AlertsStatus.RateLimited, RetryAfter: ex.RetryAfter);
             }
             catch (InfoDengueException ex)
             {

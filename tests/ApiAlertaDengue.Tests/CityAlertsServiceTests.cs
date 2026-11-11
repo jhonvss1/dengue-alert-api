@@ -149,4 +149,39 @@ public class CityAlertsServiceTests
         Assert.Single(page2.Items);
         Assert.Equal("São Paulo", page2.Items[0].Name);
     }
+
+    [Fact]
+    public async Task GetAlerts_NewCityBeyondHourlyCeiling_ReturnsRateLimited_ButCitiesWithDataKeepWorking()
+    {
+        using var testDb = new TestDb();
+        await SeedAsync(testDb, lastSyncedAt: null);
+        await using (var seed = testDb.CreateContext())
+        {
+            // São Paulo já tem dados e continua sendo servida do banco
+            var sp = await seed.Cities.FindAsync(3550308);
+            sp!.LastSyncedAt = Today.UtcDateTime;
+            sp.IsTracked = true;
+            seed.DengueAlerts.Add(Fakes.Alert(3550308, Disease.Dengue, 10, 7));
+            await seed.SaveChangesAsync();
+        }
+        var time = new FakeTimeProvider(Today);
+        var client = new FakeClient { Respond = d => [Fakes.Alert(Bh, d, 10, 1)] };
+        var options = Options.Create(new SyncOptions { MaxNewCitiesPerHour = 1 });
+        await using var db = testDb.CreateContext();
+        var sync = new CitySyncService(db, client, new CitySyncLocks(), new OnDemandSyncLimiter(options, time), options, time,
+            NullLogger<CitySyncService>.Instance);
+        var service = new CityAlertsService(db, sync, options, time, NullLogger<CityAlertsService>.Instance);
+
+        var first = await service.GetAlertsAsync(Bh, null, 12);          // usa a única vaga da hora
+        var second = await service.GetAlertsAsync(3304557, null, 12);    // Rio: cidade nova, sem vaga
+        var withData = await service.GetAlertsAsync(3550308, null, 12);  // São Paulo: já tem dados
+
+        Assert.Equal(AlertsStatus.Ok, first.Status);
+        Assert.Equal(AlertsStatus.RateLimited, second.Status);
+        Assert.True(second.RetryAfter > TimeSpan.Zero);
+        Assert.Null(second.Response);
+        Assert.Equal(AlertsStatus.Ok, withData.Status);
+        Assert.Single(withData.Response!.Alerts);
+        Assert.Equal(3, client.Calls.Count); // só Belo Horizonte foi à fonte
+    }
 }
