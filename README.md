@@ -102,7 +102,7 @@ exposto à internet: só o túnel da Cloudflare chega na API.
 **2. MySQL em Docker.**
 
 ```bash
-git clone -b dev https://github.com/jhonvss1/dengue-alert-api.git && cd dengue-alert-api
+git clone https://github.com/jhonvss1/dengue-alert-api.git && cd dengue-alert-api
 cp .env.example .env && chmod 600 .env    # preencha MYSQL_ROOT_PASSWORD, MYSQL_USER e MYSQL_PASSWORD
 docker compose up -d mysql                # 127.0.0.1:3308
 ```
