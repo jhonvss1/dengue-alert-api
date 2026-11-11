@@ -153,12 +153,6 @@ curl -X POST https://api-dengue.braggo.com.br/api/admin/sync \
   -d '{"geocodes":[3106200,3550308,3304557]}'
 ```
 
-### Alternativa: API também em Docker
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.api.yml up -d --build   # exige CORS_ORIGIN e ADMIN_API_KEY no .env
-```
-
 ### Boas práticas
 
 - **Backup:** o volume `mysql_data` guarda os dados. Agende um `mysqldump` para fora da VM
