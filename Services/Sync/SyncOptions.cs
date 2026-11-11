@@ -24,6 +24,13 @@ public class SyncOptions
     /// <summary>Dados mais velhos que isso são atualizados na leitura (com fallback para o dado salvo).</summary>
     public int StaleAfterDays { get; set; } = 14;
 
+    /// <summary>
+    /// Teto de cidades ainda sem dados que podem ser buscadas na fonte, sob demanda, por hora (janela deslizante).
+    /// Protege o InfoDengue e o servidor contra quem consulta cidades novas em sequência. 0 = sem limite.
+    /// Não vale para o job semanal nem para a sincronização manual do admin.
+    /// </summary>
+    public int MaxNewCitiesPerHour { get; set; } = 25;
+
     /// <summary>Cidades sincronizadas em paralelo pelo job semanal.</summary>
     public int MaxConcurrency { get; set; } = 2;
 

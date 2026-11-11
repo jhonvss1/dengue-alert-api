@@ -32,6 +32,7 @@ public class SyncRunnerTests
         services.AddDbContext<AppDbContext>(o => o.UseSqlite(testDb.Connection));
         services.AddSingleton<IInfoDengueClient>(client);
         services.AddSingleton(new CitySyncLocks());
+        services.AddSingleton(new OnDemandSyncLimiter(syncOptions, time));
         services.AddSingleton(syncOptions);
         services.AddSingleton<TimeProvider>(time);
         services.AddLogging();

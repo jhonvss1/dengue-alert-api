@@ -11,6 +11,7 @@ public class CitySyncService(
     AppDbContext db,
     IInfoDengueClient client,
     CitySyncLocks locks,
+    OnDemandSyncLimiter limiter,
     IOptions<SyncOptions> options,
     TimeProvider timeProvider,
     ILogger<CitySyncService> logger) : ICitySyncService
@@ -34,6 +35,13 @@ public class CitySyncService(
             && now - last < TimeSpan.FromDays(settings.StaleAfterDays))
         {
             return new CitySyncResult(CitySyncStatus.Skipped);
+        }
+
+        // Só a primeira busca de uma cidade sob demanda conta no teto: é a que traz o histórico todo da fonte.
+        if (mode == SyncMode.IfNeeded && city.LastSyncedAt is null && !limiter.TryAcquire(out var retryAfter))
+        {
+            logger.LogWarning("Cidade {Geocode} não buscada: teto de cidades novas por hora atingido.", geocode);
+            throw new SyncRateLimitedException(retryAfter);
         }
 
         var to = EpidemiologicalWeek.From(DateOnly.FromDateTime(now));

@@ -18,9 +18,13 @@ public class CitySyncServiceTests
         Fakes.Alert(Bh, disease, week, estimated, reported, level);
 
     private static CitySyncService CreateService(
-        AppDbContext db, FakeClient client, FakeTimeProvider time, CitySyncLocks? locks = null) =>
-        new(db, client, locks ?? new CitySyncLocks(), Options.Create(new SyncOptions()), time,
-            NullLogger<CitySyncService>.Instance);
+        AppDbContext db, FakeClient client, FakeTimeProvider time, CitySyncLocks? locks = null,
+        OnDemandSyncLimiter? limiter = null, SyncOptions? settings = null)
+    {
+        var options = Options.Create(settings ?? new SyncOptions());
+        return new CitySyncService(db, client, locks ?? new CitySyncLocks(),
+            limiter ?? new OnDemandSyncLimiter(options, time), options, time, NullLogger<CitySyncService>.Instance);
+    }
 
     private static async Task SeedCityAsync(TestDb testDb, DateTime? lastSyncedAt = null)
     {
@@ -221,5 +225,83 @@ public class CitySyncServiceTests
         DateTime? last = daysAgo is { } d ? now.AddDays(-d) : null;
 
         Assert.Equal(expected, CitySyncService.WeeksToFetch(last, now, new SyncOptions()));
+    }
+
+    [Fact]
+    public async Task IfNeeded_FirstSyncBeyondHourlyCeiling_IsRejected_AndSavesNothing()
+    {
+        using var testDb = new TestDb();
+        await SeedCityAsync(testDb);
+        var time = new FakeTimeProvider(Today);
+        var settings = new SyncOptions { MaxNewCitiesPerHour = 1 };
+        var limiter = new OnDemandSyncLimiter(Options.Create(settings), time);
+        Assert.True(limiter.TryAcquire(out _)); // a única vaga da hora já foi usada por outra cidade
+        var client = new FakeClient { Respond = d => [Alert(d, 10, 1)] };
+
+        await using (var db = testDb.CreateContext())
+        {
+            var ex = await Assert.ThrowsAsync<SyncRateLimitedException>(() =>
+                CreateService(db, client, time, limiter: limiter, settings: settings).SyncCityAsync(Bh, SyncMode.IfNeeded));
+            Assert.True(ex.RetryAfter > TimeSpan.Zero);
+        }
+
+        Assert.Empty(client.Calls); // nem chegou a consultar a fonte
+        await using var verify = testDb.CreateContext();
+        Assert.False((await verify.Cities.AsNoTracking().SingleAsync()).IsTracked);
+    }
+
+    [Fact]
+    public async Task ForcedSync_IgnoresTheCeiling()
+    {
+        using var testDb = new TestDb();
+        await SeedCityAsync(testDb);
+        var time = new FakeTimeProvider(Today);
+        var settings = new SyncOptions { MaxNewCitiesPerHour = 1 };
+        var limiter = new OnDemandSyncLimiter(Options.Create(settings), time);
+        Assert.True(limiter.TryAcquire(out _));
+
+        await using var db = testDb.CreateContext();
+        var result = await CreateService(db, new FakeClient(), time, limiter: limiter, settings: settings)
+            .SyncCityAsync(Bh, SyncMode.Force);
+
+        Assert.Equal(CitySyncStatus.Synced, result.Status);
+    }
+
+    [Fact]
+    public async Task StaleRefreshOfAlreadySyncedCity_DoesNotUseTheCeiling()
+    {
+        using var testDb = new TestDb();
+        await SeedCityAsync(testDb, lastSyncedAt: Today.UtcDateTime.AddDays(-30));
+        var time = new FakeTimeProvider(Today);
+        var settings = new SyncOptions { MaxNewCitiesPerHour = 1 };
+        var limiter = new OnDemandSyncLimiter(Options.Create(settings), time);
+        Assert.True(limiter.TryAcquire(out _));
+
+        await using var db = testDb.CreateContext();
+        var result = await CreateService(db, new FakeClient(), time, limiter: limiter, settings: settings)
+            .SyncCityAsync(Bh, SyncMode.IfNeeded);
+
+        Assert.Equal(CitySyncStatus.Synced, result.Status);
+    }
+
+    [Fact]
+    public async Task ConcurrentFirstRequestsForTheSameCity_ConsumeASingleSlot()
+    {
+        using var testDb = new TestDb();
+        await SeedCityAsync(testDb);
+        var time = new FakeTimeProvider(Today);
+        var settings = new SyncOptions { MaxNewCitiesPerHour = 1 };
+        var limiter = new OnDemandSyncLimiter(Options.Create(settings), time);
+        var locks = new CitySyncLocks();
+        var client = new FakeClient { Respond = d => [Alert(d, 10, 1)], Latency = TimeSpan.FromMilliseconds(50) };
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 5).Select(async _ =>
+        {
+            await using var db = testDb.CreateContext();
+            return await CreateService(db, client, time, locks, limiter, settings).SyncCityAsync(Bh, SyncMode.IfNeeded);
+        }));
+
+        Assert.Equal(1, results.Count(r => r.Status == CitySyncStatus.Synced));
+        Assert.Equal(4, results.Count(r => r.Status == CitySyncStatus.Skipped));
     }
 }

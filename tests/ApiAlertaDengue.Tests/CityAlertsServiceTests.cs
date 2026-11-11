@@ -17,7 +17,8 @@ public class CityAlertsServiceTests
     {
         var db = testDb.CreateContext();
         var options = Options.Create(new SyncOptions());
-        var sync = new CitySyncService(db, client, new CitySyncLocks(), options, time, NullLogger<CitySyncService>.Instance);
+        var sync = new CitySyncService(db, client, new CitySyncLocks(), new OnDemandSyncLimiter(options, time), options, time,
+            NullLogger<CitySyncService>.Instance);
         return (new CityAlertsService(db, sync, options, time, NullLogger<CityAlertsService>.Instance), db);
     }
 

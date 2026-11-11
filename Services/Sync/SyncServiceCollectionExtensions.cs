@@ -7,6 +7,7 @@ public static class SyncServiceCollectionExtensions
         services.Configure<SyncOptions>(configuration.GetSection(SyncOptions.Section));
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<CitySyncLocks>();
+        services.AddSingleton<OnDemandSyncLimiter>();
         services.AddScoped<ICitySyncService, CitySyncService>();
         services.AddSingleton<ISyncRunner, SyncRunner>();
         services.AddHostedService<WeeklySyncService>();
